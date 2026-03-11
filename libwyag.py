@@ -1,5 +1,6 @@
 import argparse #for parsing command line arguments
 import configparser #for parsing config files
+from curses import raw
 from datetime import datetime #for getting the current date and time
 
 try:
@@ -168,3 +169,33 @@ class GitObject(object):
     
     def init(self):
         pass
+
+def object_read(repo, sha):
+    path = repo_file(repo, "objects", sha[0,2], sha[2:])
+
+    if not os.path.isfile(path):
+        return None
+    
+    with open(path, "rb") as f:
+        raw = zlib.decompress(f.read())
+
+        #read obj type
+        x=raw.find(b' ')
+        fmt = raw[0:x]
+
+        #read n validate obj
+        y = raw.find(b'\x00', x) # \x00 is the null byte that separates the header from the content
+        size = int(raw[x:y].decode("ascii"))
+        if size != len(raw)-y-1:
+            raise Exception(f"Malformed object {sha}: bad length")
+        
+        match fmt:
+            case b"commit": c=GitCommit
+            case b"tree": c=GitTree
+            case b"blob": c=GitBlob
+            case b"tag": c=GitTag
+            case _: 
+                raise Exception(f"Unknown type {fmt.decode('ascii')}")
+            
+        return c(raw[y+1:])
+
