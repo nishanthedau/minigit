@@ -211,3 +211,14 @@ def object_write(obj, repo=None):
             with open(path, "wb")as f:
                 f.write(zlib.compress(result))
     return sha
+
+#blobs are just raw binary data related to a file
+class GitBlob(GitObject):
+    fmt = b'blob'
+
+    def serialize(self):
+        return self.blobdata
+    
+    def deserialize(self):
+        self.blobdata = data
+
