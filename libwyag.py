@@ -199,3 +199,15 @@ def object_read(repo, sha):
             
         return c(raw[y+1:])
 
+def object_write(obj, repo=None):
+    data = obj.serialize()
+    result = obj.fmt + b' ' + str(len(data)).encode() + b'\x00' + data
+    sha = hashlib.sha1(result).hexdigest()
+
+    if repo :
+        path = repo_file(repo, "objects", sha[0:2], sha[2:], mkdir = True)
+
+        if not os.path.isfile(path):
+            with open(path, "wb")as f:
+                f.write(zlib.compress(result))
+    return sha
