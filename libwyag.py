@@ -283,3 +283,52 @@ def object_hash(fd, fmt, repo=None):
         case _: raise Exception(f"unknown type {fmt}")
         
     return object_write(obj, repo)
+
+#Parsing commits
+def kvlm_parse(raw, start=0, dct=None):
+    #tis a recursive fn
+    if not dct:
+        dct = dict()
+    
+    #search for the next space and next newline
+    spc = raw.find(b'', start)
+    nl = raw.find(b'\n', start)
+    
+    # Base case
+    # =========
+    # If newline appears first (or there's no space at all, in which
+    # case find returns -1), we assume a blank line.  A blank line
+    # means the remainder of the data is the message.  We store it in
+    # the dictionary, with None as the key, and return.
+    if (spc < 0) or (nl < spc):
+        assert nl == start
+        dct[None] = raw[start+1:]
+        return dct
+    
+    # Recursive case
+    # ==============
+    # we read a key-value pair and recurse for the next.
+    key = raw[start:spc]
+    
+    #find end of value
+    end=start
+    while True:
+        end = raw.find(b'\n', end+1)
+        if raw[end+1] != ord(' '): break
+        
+    #grabbing value
+    value=raw[spc+1:end].replace(b'\n', b'\n')
+    
+    #dont overwrite existing data contents
+    if key in dct:
+        if type(dct[key]) == list:
+            dct[key].append(value)
+        else:
+            dct[key] = [ dct[key],value]
+    
+    else:
+        dct[key]=value
+        
+    return kvlm_parse(raw, start=end+1, dct=dct)
+   
+    
