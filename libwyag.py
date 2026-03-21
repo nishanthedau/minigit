@@ -1093,3 +1093,20 @@ def cmd_status(_):
     cmd_status_head_index(repo, index)
     print()
     cmd_status_index_worktree(repo, index)
+    
+#finding active branch
+def branch_get_active(repo):
+    with open(repo_file(repo, "HEAD"), "r") as f:
+        head = f.read()
+
+    if head.startswith("ref: refs/heads/"):
+        return(head[16:-1])
+    else:
+        return False
+
+def cmd_status_branch(repo):
+    branch = branch_get_active(repo)
+    if branch:
+        print(f"On branch {branch}.")
+    else:
+        print(f"HEAD detached at {object_find(repo, 'HEAD')}")
